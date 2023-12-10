@@ -1,0 +1,32 @@
+{
+	"env": {
+		"vex_compilerPath": "${config:vexrobotics.vexcode.Cpp.Toolchain.Path}\\clang\\bin\\clang",
+		"vex_sdkPath": "${config:vexrobotics.vexcode.Cpp.Sdk.Home}\\IQ2\\IQ2_20230627_09_00_00\\vexiq2",
+		"vex_gcc": "${vex_sdkPath}/gcc/include/c++/7.3.1",
+		"vex_sdkIncludes": [
+			"${vex_sdkPath}/clang/8.0.0/include/**",
+			"${vex_gcc}/**",
+			"${vex_gcc}/arm-none-eabi/armv7-arm/thumb",
+			"${vex_sdkPath}/gcc/include",
+			"${vex_sdkPath}/include/**",
+			"${workspaceFolder}/include/**",
+			"${workspaceFolder}/src/**"
+		]
+	},
+	"configurations": [
+		{
+			"name": "windows-gcc-x64",
+			"includePath": [
+				"${workspaceFolder}/**"
+			],
+			"compilerPath": "gcc",
+			"cStandard": "${default}",
+			"cppStandard": "c++23",
+			"intelliSenseMode": "windows-gcc-x64",
+			"compilerArgs": [
+				""
+			]
+		}
+	],
+	"version": 4
+}
