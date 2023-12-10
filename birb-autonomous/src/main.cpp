@@ -89,7 +89,13 @@ void driver(){
       rightdrive.setVelocity(Controller.AxisD.position(), percent);
       leftdrive.spin(forward);
       rightdrive.spin(forward);
+      wait(5, msec);
     } 
+    else {
+      wait(20, msec);
+    }
+    // leftdrive.stop();
+    // rightdrive.stop();
   }
 }
 
