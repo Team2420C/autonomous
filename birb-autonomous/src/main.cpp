@@ -82,10 +82,20 @@ void updatePosition() {
     }
   }
 }
+void driver(){
+  while ((Controller.AxisA.position != 0) || (Controller.AxisB.position != 0) || (Controller.AxisC.position != 0) || (Controller.AxisD.position != 0)) {
+    leftdrive.setVelocity(Controller.AxisA.position, percent);
+    rightdrive.setVelocity(Controller.AxisD.position, percent);
+    leftdrive.spin(forward);
+    rightdrive.spin(forward);
+  } 
+  leftdrive.stop();
+  rightdrive.stop();
+}
 
 void autonomous(float target_x, float target_y) {
   isAutonomousRunning = true;
-  while (fabs(x_pos - target_x) > 1 || fabs(y_pos - target_y) > 1) {
+  while (fabs(x_pos - target_x) > 1 || fabs(y_pos - target_y) > 1) && ((Controller.AxisA.position = 0) || (Controller.AxisB.position = 0) || (Controller.AxisC.position = 0) || (Controller.AxisD.position = 0)) {
     theta = BrainInertial.heading(degrees) * pi / 180;
     y_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * gear_ratio;
     x_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * cos(theta) * gear_ratio;
@@ -125,6 +135,7 @@ int main() {
     wait(5, msec);
   }
   vex::thread positionUpdater(updatePosition);
+  vex::thread drivercontroll(driver);
   autonomous(0, 1000);
   Brain.playSound(siren);
 }
