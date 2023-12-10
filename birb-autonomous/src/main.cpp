@@ -95,7 +95,7 @@ void driver(){
 
 void autonomous(float target_x, float target_y) {
   isAutonomousRunning = true;
-  while (fabs(x_pos - target_x) > 1 || fabs(y_pos - target_y) > 1) && ((Controller.AxisA.position = 0) || (Controller.AxisB.position = 0) || (Controller.AxisC.position = 0) || (Controller.AxisD.position = 0)) {
+  while (fabs(x_pos - target_x) > 1 || fabs(y_pos - target_y) > 1) && (Controller.AxisA.position == 0) && (Controller.AxisB.position == 0) && (Controller.AxisC.position == 0) && (Controller.AxisD.position == 0) {
     theta = BrainInertial.heading(degrees) * pi / 180;
     y_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * gear_ratio;
     x_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * cos(theta) * gear_ratio;
