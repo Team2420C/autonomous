@@ -66,11 +66,20 @@ float pi = 3.14159265358979323846;
 float theta;
 float leftWheelDist;
 float rightWheelDist;
-float deltaTheta;
+float DeltaTheta;
+float currentL;
+float currentR;
+float DeltaL;
+float DeltaR;
+float SideChord;
+float DeltaXSide;
+float DeltaYSide;
 float deltaDist;
 float angle_difference;
 float target_distance;
-const float wheel_diameter = 7.87402;
+float PreviousR;
+float PreviousL;
+const float wheel_circumference = 2.3622 * pi;
 const float wheelbase = 4.5;
 const float ticksPerRev = 360;
 const float DEG_TO_RAD = 2 * pi / ticksPerRev * 1 / gear_ratio;
@@ -78,26 +87,45 @@ const float DEG_TO_RAD = 2 * pi / ticksPerRev * 1 / gear_ratio;
 void updatePosition() {
   while (true) {
     if (!isAutonomousRunning) {
-      leftWheelDist = DEG_TO_RAD * leftdrive.position(degrees) * wheel_diameter;
-      rightWheelDist = DEG_TO_RAD * rightdrive.position(degrees) * wheel_diameter;
-      deltaDist = (leftWheelDist + rightWheelDist) / 2.0;
-      deltaTheta = (rightWheelDist - leftWheelDist) / wheelbase;
-      x_pos += deltaDist * cos(theta);
-      y_pos += deltaDist * sin(theta);
-      theta += deltaTheta;
-      // Normalize theta to keep it within [0, 2*pi)
-      theta = fmod(theta, 2.0 * pi);
-      if (theta < 0) {
-        theta += 2.0 * pi;
+      // Averages the Left and Right integrated motor encoders since we don't have encoders yet
+      currentR = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2.0;
+      currentL = (leftdriveMotorA.position(degrees) + leftdriveMotorB.position(degrees)) / 2.0;
+
+      // Creates variables for change in each side info in inches (replace 12.9590697 with your wheel circumference)
+      DeltaL = ((currentL - PreviousL) * wheel_circumference) / ticksPerRev;
+      DeltaR = ((currentR - PreviousR) * wheel_circumference) / ticksPerRev;
+
+      // Determines the change in angle of the robot using the rotational change in each side
+      DeltaTheta = (DeltaR - DeltaL) / wheelbase;
+
+      // Creates an if/else statement to prevent NaN values from appearing and causing issues with calculation
+      if (DeltaTheta == 0) {  // If there is no change in angle
+        x_pos += DeltaL * cos(theta);
+        y_pos += DeltaL * sin(theta);
+      } else {  // If the angle changes
+        // Calculate the changes in X, Y from chords of an arc/circle
+        SideChord = 2 * ((DeltaL / DeltaTheta) + wheelbase) * sin(DeltaTheta / 2);
+        DeltaYSide = SideChord * cos(theta + (DeltaTheta / 2));
+        DeltaXSide = SideChord * sin(theta + (DeltaTheta / 2));
+
+        // Update the robot's position and orientation
+        theta += DeltaTheta;
+        x_pos += DeltaXSide;
+        y_pos += DeltaYSide;
       }
+
+      // Update the previous values for the next iteration
+      PreviousL = currentL;
+      PreviousR = currentR;
+
       wait(5, msec);
-    } 
-    else {
+    } else {
       // Stop updating position while autonomous is running
       wait(5, msec);
     }
   }
 }
+
 void driver(){
   while (true) {
     while ((Controller.AxisA.position() != 0) || (Controller.AxisB.position() != 0) || (Controller.AxisC.position() != 0) || (Controller.AxisD.position() != 0)) {
@@ -115,39 +143,68 @@ void driver(){
 
 void autonomous(float target_x, float target_y) {
   isAutonomousRunning = true;
-  while ((fabs(x_pos - target_x) > 1 || fabs(y_pos - target_y) > 1) && (Controller.AxisA.position() == 0) && (Controller.AxisB.position() == 0) && (Controller.AxisC.position() == 0) && (Controller.AxisD.position() == 0)) {
-    leftWheelDist = DEG_TO_RAD * leftdrive.position(degrees) * wheel_diameter;
-    rightWheelDist = DEG_TO_RAD * rightdrive.position(degrees) * wheel_diameter;
-    deltaDist = (leftWheelDist + rightWheelDist) / 2.0;
-    deltaTheta = (rightWheelDist - leftWheelDist) / wheelbase;
-    x_pos += deltaDist * cos(theta);
-    y_pos += deltaDist * sin(theta);
-    theta += deltaTheta;
-    // Normalize theta to keep it within [0, 2*pi)
-    theta = fmod(theta, 2.0 * pi);
-    if (theta < 0) {
-      theta += 2.0 * pi;
+  while ((fabs(x_pos - target_x) > 1 || fabs(y_pos - target_y) > 1) &&
+         (Controller.AxisA.position() == 0) && (Controller.AxisB.position() == 0) &&
+         (Controller.AxisC.position() == 0) && (Controller.AxisD.position() == 0)) {
+
+    // Update odometry position
+    currentR = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2.0;
+    currentL = (leftdriveMotorA.position(degrees) + leftdriveMotorB.position(degrees)) / 2.0;
+    DeltaL = ((currentL - PreviousL) * wheel_circumference) / ticksPerRev;
+    DeltaR = ((currentR - PreviousR) * wheel_circumference) / ticksPerRev;
+    DeltaTheta = (DeltaR - DeltaL) / wheelbase;
+
+    if (DeltaTheta == 0) {  // If there is no change in angle
+      x_pos += DeltaL * cos(theta);
+      y_pos += DeltaL * sin(theta);
+    } else {  // If the angle changes
+      SideChord = 2 * ((DeltaL / DeltaTheta) + wheelbase) * sin(DeltaTheta / 2);
+      DeltaYSide = SideChord * cos(theta + (DeltaTheta / 2));
+      DeltaXSide = SideChord * sin(theta + (DeltaTheta / 2));
+
+      theta += DeltaTheta;
+      x_pos += DeltaXSide;
+      y_pos += DeltaYSide;
     }
+
+    // Update the previous values for the next iteration
+    PreviousL = currentL;
+    PreviousR = currentR;
+
+    // Calculate errors for control
     error_x = target_x - x_pos;
     error_y = target_y - y_pos;
+
     // Calculate the angle to the target
     target_distance = sqrt(error_x * error_x + error_y * error_y);
     target_angle = atan2(error_y, error_x);
+
     // Calculate the difference between the target angle and the current heading
     angle_difference = target_angle - theta;
-    leftdrive.setVelocity((20 + angle_difference) * cos(angle_difference), percent);
-    rightdrive.setVelocity((20 - angle_difference) * cos(angle_difference), percent);
+
+    // Set the velocities to move towards the target
+    leftdrive.setVelocity(angle_difference * 50, percent);
+    rightdrive.setVelocity(angle_difference * 50, percent);
+
+    // Spin the motors
     leftdrive.spin(forward);
     rightdrive.spin(forward);
+
+    // Print debugging information (optional)
     printf("x_pos: %f, y_pos: %f", x_pos, y_pos);
     printf("\n");
     printf("target_x: %f, target_y: %f", target_x, target_y);
     printf("\n");
-    wait(5, msec); // Adjust the wait time as needed
+
+    // Adjust the wait time as needed
+    wait(5, msec);
   }
-  isAutonomousRunning = false;
+
+  // Stop the motors when the target is reached
   leftdrive.stop();
   rightdrive.stop();
+
+  isAutonomousRunning = false;
 }
 int main() {
   Brain.Screen.setCursor(1, 1);
@@ -166,6 +223,6 @@ int main() {
   }
   vex::thread positionUpdater(updatePosition);
   vex::thread drivercontroll(driver);
-  autonomous(200, 200);
+  autonomous(0, 1000);
   Brain.playSound(siren);
 }
