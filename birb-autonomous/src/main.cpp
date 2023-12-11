@@ -117,8 +117,13 @@ void updatePosition() {
       // Update the previous values for the next iteration
       PreviousL = currentL;
       PreviousR = currentR;
-
+      Brain.Screen.print("x_pos: %f, y_pos: %f", x_pos, y_pos);
+      Brain.Screen.newLine();
+      Brain.Screen.print("y_pos: %f, target_y: %f", y_pos, target_y);
+      Brain.Screen.newLine();
+      Brain.Screen.setCursor(1, 1);
       wait(5, msec);
+      Brain.Screen.clearScreen();
     } else {
       // Stop updating position while autonomous is running
       wait(5, msec);
@@ -191,13 +196,14 @@ void autonomous(float target_x, float target_y) {
     rightdrive.spin(forward);
 
     // Print debugging information (optional)
-    printf("x_pos: %f, y_pos: %f", x_pos, y_pos);
-    printf("\n");
-    printf("target_x: %f, target_y: %f", target_x, target_y);
-    printf("\n");
-
+    Brain.Screen.print("x_pos: %f, y_pos: %f", x_pos, y_pos);
+    Brain.Screen.newLine();
+    Brain.Screen.print("y_pos: %f, target_y: %f", y_pos, target_y);
+    Brain.Screen.newLine();
+    Brain.Screen.setCursor(1, 1);
     // Adjust the wait time as needed
-    wait(5, msec);
+    wait(4, seconds);
+    Brain.Screen.clearScreen();
   }
 
   // Stop the motors when the target is reached
