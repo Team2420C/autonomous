@@ -60,40 +60,54 @@ float error_x;
 float error_y;
 float target_x;
 float target_y;
-float gear_ratio = 3;
+const float gear_ratio = 3;
 float target_angle;
 float pi = 3.14159265358979323846;
 float theta;
-float kp = 0.01;
+float leftWheelDist;
+float rightWheelDist;
+float deltaTheta;
+float deltaDist;
 float angle_difference;
+float target_distance;
+const float wheel_diameter = 7.87402;
+const float wheelbase = 4.5;
+const float ticksPerRev = 360;
+const float DEG_TO_RAD = 2 * pi / ticksPerRev * 1 / gear_ratio;
 
 void updatePosition() {
   while (true) {
     if (!isAutonomousRunning) {
-      theta = BrainInertial.heading(degrees) * pi / 180;
-      y_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * gear_ratio;
-      x_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * cos(theta) * gear_ratio;
-      error_x = target_x - x_pos;
-      error_y = target_y - y_pos;
-      wait(20, msec);
-    } else {
+      leftWheelDist = DEG_TO_RAD * leftdrive.position(degrees) * wheel_diameter;
+      rightWheelDist = DEG_TO_RAD * rightdrive.position(degrees) * wheel_diameter;
+      deltaDist = (leftWheelDist + rightWheelDist) / 2.0;
+      deltaTheta = (rightWheelDist - leftWheelDist) / wheelbase;
+      x_pos += deltaDist * cos(theta);
+      y_pos += deltaDist * sin(theta);
+      theta += deltaTheta;
+      // Normalize theta to keep it within [0, 2*pi)
+      theta = fmod(theta, 2.0 * pi);
+      if (theta < 0) {
+        theta += 2.0 * pi;
+      }
+      wait(5, msec);
+    } 
+    else {
       // Stop updating position while autonomous is running
-      wait(20, msec);
+      wait(5, msec);
     }
   }
 }
 void driver(){
   while (true) {
-    if ((Controller.AxisA.position() != 0) || (Controller.AxisB.position() != 0) || (Controller.AxisC.position() != 0) || (Controller.AxisD.position() != 0)) {
+    while ((Controller.AxisA.position() != 0) || (Controller.AxisB.position() != 0) || (Controller.AxisC.position() != 0) || (Controller.AxisD.position() != 0)) {
       leftdrive.setVelocity(Controller.AxisA.position(), percent);
       rightdrive.setVelocity(Controller.AxisD.position(), percent);
       leftdrive.spin(forward);
       rightdrive.spin(forward);
-      wait(5, msec);
+      wait(1, msec);
     } 
-    else {
-      wait(20, msec);
-    }
+    wait(5, msec);
     // leftdrive.stop();
     // rightdrive.stop();
   }
@@ -102,24 +116,34 @@ void driver(){
 void autonomous(float target_x, float target_y) {
   isAutonomousRunning = true;
   while ((fabs(x_pos - target_x) > 1 || fabs(y_pos - target_y) > 1) && (Controller.AxisA.position() == 0) && (Controller.AxisB.position() == 0) && (Controller.AxisC.position() == 0) && (Controller.AxisD.position() == 0)) {
-    theta = BrainInertial.heading(degrees) * pi / 180;
-    y_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * gear_ratio;
-    x_pos = (leftdrive.position(degrees) + rightdrive.position(degrees)) / 2 * cos(theta) * gear_ratio;
+    leftWheelDist = DEG_TO_RAD * leftdrive.position(degrees) * wheel_diameter;
+    rightWheelDist = DEG_TO_RAD * rightdrive.position(degrees) * wheel_diameter;
+    deltaDist = (leftWheelDist + rightWheelDist) / 2.0;
+    deltaTheta = (rightWheelDist - leftWheelDist) / wheelbase;
+    x_pos += deltaDist * cos(theta);
+    y_pos += deltaDist * sin(theta);
+    theta += deltaTheta;
+    // Normalize theta to keep it within [0, 2*pi)
+    theta = fmod(theta, 2.0 * pi);
+    if (theta < 0) {
+      theta += 2.0 * pi;
+    }
     error_x = target_x - x_pos;
     error_y = target_y - y_pos;
     // Calculate the angle to the target
-    target_angle = atan2(error_y, error_x) * 180 / pi;
+    target_distance = sqrt(error_x * error_x + error_y * error_y);
+    target_angle = atan2(error_y, error_x);
     // Calculate the difference between the target angle and the current heading
     angle_difference = target_angle - theta;
-    leftdrive.setVelocity(angle_difference, percent);
-    rightdrive.setVelocity(angle_difference, percent);
+    leftdrive.setVelocity((20 + angle_difference) * cos(angle_difference), percent);
+    rightdrive.setVelocity((20 - angle_difference) * cos(angle_difference), percent);
     leftdrive.spin(forward);
     rightdrive.spin(forward);
     printf("x_pos: %f, y_pos: %f", x_pos, y_pos);
     printf("\n");
     printf("target_x: %f, target_y: %f", target_x, target_y);
     printf("\n");
-    wait(20, msec); // Adjust the wait time as needed
+    wait(5, msec); // Adjust the wait time as needed
   }
   isAutonomousRunning = false;
   leftdrive.stop();
@@ -142,6 +166,6 @@ int main() {
   }
   vex::thread positionUpdater(updatePosition);
   vex::thread drivercontroll(driver);
-  autonomous(0, 1000);
+  autonomous(200, 200);
   Brain.playSound(siren);
 }
