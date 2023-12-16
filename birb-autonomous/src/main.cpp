@@ -195,8 +195,8 @@ void autonomous(float target_x, float target_y, float target_angle) {
       heading_error = angle_difference * (180 / pi);
     }
     else {
-      angle_difference = target_angle_odom - theta;
-      heading_error = angle_difference * (180 / pi);
+      angle_difference = target_angle_odom;
+      heading_error = angle_difference;
     }
     proportional_distance = target_distance * kp_distance;
     integral_distance = (integral_distance + target_distance) * ki_distance;
