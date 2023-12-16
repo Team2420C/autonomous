@@ -122,7 +122,7 @@ void updatePosition() {
         theta = 0;
         robotReverse = true;
       }
-      if (robotReverse = false) {
+      if (robotReverse == false) {
         change_in_x = dist_moved * sin(theta);
         change_in_y = dist_moved * cos(theta);
       } 
@@ -218,7 +218,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     derivative_x = (error_x - prev_error_x) * kd_x;
     pid_output_x = proportional_x + integral_x + derivative_x;
     proportional_y = error_y * kp_y;
-    integral_x = (integral_y + error_y) * ki_y;
+    integral_y = (integral_y + error_y) * ki_y;
     if (error_y == 0) {
       integral_y = 0;
     } 
@@ -228,7 +228,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     derivative_y = (error_y - prev_error_y) * kd_y;
     pid_output_y = proportional_y + integral_y + derivative_y;
     proportional_heading = heading_error * kp_heading;
-    integral_x = (integral_heading + heading_error) * ki_heading;
+    integral_heading = (integral_heading + heading_error) * ki_heading;
     if (heading_error == 0) {
       integral_heading = 0;
     } 
