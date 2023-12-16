@@ -183,7 +183,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
       theta = 0;
       robotReverse = true;
     }
-    if (robotReverse = false) {
+    if (robotReverse == false) {
       change_in_x = dist_moved * sin(theta);
       change_in_y = dist_moved * cos(theta);
     } 
@@ -199,7 +199,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     target_angle_odom = atan2(error_y, error_x);
     // Calculate the difference between the target angle and the current heading
     angle_difference = target_angle_odom - theta;
-    if target_angle_odom != target_angle {
+    if (target_angle_odom != target_angle) {
       angle_difference = target_angle_odom - theta;
       heading_error = angle_difference * (180 / pi);
     }
