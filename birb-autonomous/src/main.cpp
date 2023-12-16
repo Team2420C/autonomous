@@ -104,7 +104,7 @@ void updatePosition() {
       prev_leftwheeldist = leftwheeldist;
       prev_rightwheeldist = rightwheeldist;
       leftwheeldist = (leftdriveMotorA.position(degrees) + leftdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;
-      rightwheeldist = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;      change_rightwheel = rightwheeldist - prev_rightwheeldist;
+      rightwheeldist = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;      
       change_rightwheel = rightwheeldist - prev_rightwheeldist;
       change_leftwheel = leftwheeldist - prev_leftwheeldist;
       dist_moved = (change_leftwheel + change_rightwheel) / 2;
@@ -164,7 +164,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     prev_leftwheeldist = leftwheeldist;
     prev_rightwheeldist = rightwheeldist;
     leftwheeldist = (leftdriveMotorA.position(degrees) + leftdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;
-    rightwheeldist = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;      change_rightwheel = rightwheeldist - prev_rightwheeldist;
+    rightwheeldist = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;
     change_rightwheel = rightwheeldist - prev_rightwheeldist;
     change_leftwheel = leftwheeldist - prev_leftwheeldist;
     dist_moved = (change_leftwheel + change_rightwheel) / 2;
