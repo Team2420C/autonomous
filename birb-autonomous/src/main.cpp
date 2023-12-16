@@ -57,26 +57,19 @@ const float pi = 3.14159265358979323846;
 const float wheel_circumference = 2.3622 * pi;
 const float wheel_distance = 4.5;
 const float gear_ratio = 3;
-const float kp_x = 0.1;
-const float ki_x = 0;
-const float kd_x = 0;
-const float kp_y = 0.1;
-const float ki_y = 0;
-const float kd_y = 0;
+const float kp_distance = 0.1;
+const float ki_distance = 0;
+const float kd_distance = 0;
 const float kp_heading = 0.1;
 const float ki_heading = 0;
 const float kd_heading = 0;
-float proportional_x;
-float integral_x;
-float derivative_x;
-float proportional_y;
-float integral_y;
-float derivative_y;
+float proportional_distance;
+float integral_distance;
+float derivative_distance;
 float proportional_heading;
 float integral_heading;
 float derivative_heading;
-float pid_output_x;
-float pid_output_y;
+float pid_output_distance;
 float pid_output_heading;
 float left_velocity;
 float right_velocity;
@@ -93,8 +86,7 @@ float target_x;
 float target_y;
 float error_x;
 float error_y;
-float prev_error_x;
-float prev_error_y;
+float prev_error_distance;
 float prev_error_heading;
 float dist_moved;
 float change_in_x;
@@ -166,8 +158,7 @@ void driver(){
 void autonomous(float target_x, float target_y, float target_angle) {
   isAutonomousRunning = true;
   while ((fabs(x_pos - target_x) > .1 || fabs(y_pos - target_y) > .1) && heading_error != 0 && (Controller.AxisA.position() == 0) && (Controller.AxisB.position() == 0) && (Controller.AxisC.position() == 0) && (Controller.AxisD.position() == 0)) {
-    prev_error_x = error_x;
-    prev_error_y = error_y;
+    prev_error_distance = target_distance;
     prev_error_heading = heading_error;
     prev_theta = theta;
     prev_leftwheeldist = leftwheeldist;
@@ -207,38 +198,28 @@ void autonomous(float target_x, float target_y, float target_angle) {
       angle_difference = target_angle_odom - theta;
       heading_error = angle_difference * (180 / pi);
     }
-    proportional_x = error_x * kp_x;
-    integral_x = (integral_x + error_x) * ki_x;
-    if (error_x == 0) {
-      integral_x = 0;
+    proportional_distance = target_distance * kp_distance;
+    integral_distance = (integral_distance + target_distance) * ki_distance;
+    if (target_distance == 0) {
+      integral_distance = 0;
     } 
-    if (integral_x > 25) {
-      integral_x = 25;
+    if (integral_distance > 75) {
+      integral_distance = 75;
     }
-    derivative_x = (error_x - prev_error_x) * kd_x;
-    pid_output_x = proportional_x + integral_x + derivative_x;
-    proportional_y = error_y * kp_y;
-    integral_y = (integral_y + error_y) * ki_y;
-    if (error_y == 0) {
-      integral_y = 0;
-    } 
-    if (integral_y > 25) {
-      integral_y = 25;
-    }
-    derivative_y = (error_y - prev_error_y) * kd_y;
-    pid_output_y = proportional_y + integral_y + derivative_y;
+    derivative_distance = (target_distance - prev_error_distance) * kd_distance;
+    pid_output_distance = proportional_distance + integral_distance + derivative_distance;
     proportional_heading = heading_error * kp_heading;
     integral_heading = (integral_heading + heading_error) * ki_heading;
     if (heading_error == 0) {
       integral_heading = 0;
     } 
-    if (integral_heading > 25) {
-      integral_heading = 25;
+    if (integral_heading > 75) {
+      integral_heading = 75;
     }
     derivative_heading = (heading_error - prev_error_heading) * kd_heading;
     pid_output_heading = proportional_heading + integral_heading + derivative_heading;
-    left_velocity = pid_output_x + pid_output_y + pid_output_heading;
-    right_velocity = (pid_output_x + pid_output_y + pid_output_heading) * -1;
+    left_velocity = pid_output_distance + pid_output_heading;
+    right_velocity = (pid_output_distance + pid_output_heading) * -1;
     // Set the velocities to move towards the target
     leftdrive.setVelocity(left_velocity, percent);
     rightdrive.setVelocity(right_velocity, percent);
