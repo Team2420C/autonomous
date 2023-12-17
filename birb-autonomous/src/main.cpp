@@ -144,7 +144,7 @@ void updatePosition() {
 void driver(){
   while (true) {
     constexpr int32_t DEADBAND = 5;
-    while ((Controller.AxisA.position() != 0) || (Controller.AxisB.position() != 0) || (Controller.AxisC.position() != 0) || (Controller.AxisD.position() != 0)) {
+    while ((Controller.AxisA.position() != 0) || (Controller.AxisD.position() != 0)) {
       int32_t left_speed = Controller.AxisA.position();
       int32_t right_speed = Controller.AxisD.position();
       if (std::abs(left_speed) < DEADBAND) left_speed = 0;
@@ -161,7 +161,7 @@ void driver(){
 
 void autonomous(float target_x, float target_y, float target_angle) {
   isAutonomousRunning = true;
-  while ((fabs(x_pos - target_x) > .1 || fabs(y_pos - target_y) > .1) && heading_error != 0 && (Controller.AxisA.position() == 0) && (Controller.AxisB.position() == 0) && (Controller.AxisC.position() == 0) && (Controller.AxisD.position() == 0)) {
+  while ((fabs(x_pos - target_x) > .1 || fabs(y_pos - target_y) > .1) && heading_error != 0 && (Controller.AxisA.position() == 0) && (Controller.AxisD.position() == 0)) {
     prev_error_distance = target_distance;
     prev_error_heading = heading_error;
     prev_theta = theta;
