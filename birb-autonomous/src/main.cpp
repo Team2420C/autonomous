@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
+#include <cstdint>
 
 #include "vex.h"
 
@@ -142,16 +143,19 @@ void updatePosition() {
 
 void driver(){
   while (true) {
+    constexpr int32_t DEADBAND = 5;
     while ((Controller.AxisA.position() != 0) || (Controller.AxisB.position() != 0) || (Controller.AxisC.position() != 0) || (Controller.AxisD.position() != 0)) {
-      leftdrive.setVelocity(Controller.AxisA.position(), percent);
-      rightdrive.setVelocity(Controller.AxisD.position(), percent);
+      int32_t left_speed = Controller.AxisA.position();
+      int32_t right_speed = Controller.AxisD.position();
+      if (std::abs(left_speed) < DEADBAND) left_speed = 0;
+      if (std::abs(right_speed) < DEADBAND) right_speed = 0;
+      leftdrive.setVelocity(left_speed, percent);
+      rightdrive.setVelocity(right_speed, percent);
       leftdrive.spin(forward);
       rightdrive.spin(forward);
       wait(1, msec);
     } 
     wait(5, msec);
-    // leftdrive.stop();
-    // rightdrive.stop();
   }
 }
 
@@ -234,8 +238,6 @@ void autonomous(float target_x, float target_y, float target_angle) {
     wait(5, msec);
     Brain.Screen.clearScreen();  
   }
-
-  // Stop the motors when the target is reached
   leftdrive.stop();
   rightdrive.stop();
 
