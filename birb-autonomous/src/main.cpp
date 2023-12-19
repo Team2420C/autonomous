@@ -39,8 +39,8 @@ motor leftdriveMotorA = motor(PORT1, true);
 motor leftdriveMotorB = motor(PORT2, false);
 motor_group leftdrive = motor_group(leftdriveMotorA, leftdriveMotorB);
 
-motor rightdriveMotorA = motor(PORT5, true);
-motor rightdriveMotorB = motor(PORT6, false);
+motor rightdriveMotorA = motor(PORT7, true);
+motor rightdriveMotorB = motor(PORT8, false);
 motor_group rightdrive = motor_group(rightdriveMotorA, rightdriveMotorB);
 
 controller Controller = controller();
@@ -56,12 +56,12 @@ float x_pos;
 float y_pos;
 const float pi = 3.14159265358979323846;
 const float wheel_circumference = 2.3622 * pi;
-const float wheel_distance = 4.5;
+// const float wheel_distance = 4.5;
 const float gear_ratio = 3;
-const float kp_distance = 0.1;
+const float kp_distance = 15;
 const float ki_distance = 0;
 const float kd_distance = 0;
-const float kp_heading = 0.1;
+const float kp_heading = .6;
 const float ki_heading = 0;
 const float kd_heading = 0;
 float proportional_distance;
@@ -75,8 +75,6 @@ float pid_output_heading;
 float left_velocity;
 float right_velocity;
 float theta;
-float prev_theta;
-float current_theta;
 float leftwheeldist;
 float rightwheeldist;
 float prev_leftwheeldist;
@@ -101,7 +99,6 @@ float heading_error;
 void updatePosition() {
   while (true) {
     if (!isAutonomousRunning) {
-      prev_theta = theta;
       prev_leftwheeldist = leftwheeldist;
       prev_rightwheeldist = rightwheeldist;
       leftwheeldist = (leftdriveMotorA.position(degrees) + leftdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;
@@ -109,8 +106,7 @@ void updatePosition() {
       change_rightwheel = rightwheeldist - prev_rightwheeldist;
       change_leftwheel = leftwheeldist - prev_leftwheeldist;
       dist_moved = (change_leftwheel + change_rightwheel) / 2;
-      current_theta = (change_leftwheel - change_rightwheel) / wheel_distance;
-      theta = prev_theta + current_theta;
+      theta = BrainInertial.heading(degrees) * (pi / 180);
       if (theta > 180) {
         theta = 0;
         robotReverse = true;
@@ -161,10 +157,9 @@ void driver(){
 
 void autonomous(float target_x, float target_y, float target_angle) {
   isAutonomousRunning = true;
-  while ((fabs(x_pos - target_x) > .1 || fabs(y_pos - target_y) > .1) && heading_error != 0 && (Controller.AxisA.position() == 0) && (Controller.AxisD.position() == 0)) {
+  while (fabs(x_pos - target_x) > 0.1 || fabs(y_pos - target_y) > 0.1 || Controller.AxisA.position() != 0 || Controller.AxisD.position() != 0) {
     prev_error_distance = target_distance;
     prev_error_heading = heading_error;
-    prev_theta = theta;
     prev_leftwheeldist = leftwheeldist;
     prev_rightwheeldist = rightwheeldist;
     leftwheeldist = (leftdriveMotorA.position(degrees) + leftdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;
@@ -172,77 +167,96 @@ void autonomous(float target_x, float target_y, float target_angle) {
     change_rightwheel = rightwheeldist - prev_rightwheeldist;
     change_leftwheel = leftwheeldist - prev_leftwheeldist;
     dist_moved = (change_leftwheel + change_rightwheel) / 2;
-    current_theta = (change_leftwheel - change_rightwheel) / wheel_distance;
-    theta = prev_theta + current_theta;
-    if (theta > 180) {
+    theta = BrainInertial.heading(degrees) * (pi / 180);
+    
+    if (theta > 180 || theta < -180) {
       theta = 0;
       robotReverse = true;
     }
+    
     if (robotReverse == false) {
-      change_in_x = dist_moved * sin(theta);
-      change_in_y = dist_moved * cos(theta);
-    } 
-    else {
       change_in_x = dist_moved * cos(theta);
       change_in_y = dist_moved * sin(theta);
+    } 
+    else {
+      change_in_x = dist_moved * sin(theta);
+      change_in_y = dist_moved * cos(theta);
     }
+
     x_pos = x_pos + change_in_x;
     y_pos = y_pos + change_in_y; 
     error_x = target_x - x_pos;
     error_y = target_y - y_pos;
     target_distance = sqrt(error_x * error_x + error_y * error_y);
     target_angle_odom = atan2(error_y, error_x);
+    
     // Calculate the difference between the target angle and the current heading
     angle_difference = target_angle_odom - theta;
+    
     if (target_angle_odom != target_angle) {
       angle_difference = target_angle_odom - theta;
       heading_error = angle_difference * (180 / pi);
     }
     else {
-      angle_difference = target_angle - theta;
-      heading_error = angle_difference;
+      angle_difference = (target_angle * (pi / 180)) - theta;
+      heading_error = angle_difference * (180 / pi);
     }
+
     proportional_distance = target_distance * kp_distance;
     integral_distance = (integral_distance + target_distance) * ki_distance;
+    
     if (target_distance == 0) {
       integral_distance = 0;
     } 
+    
     if (integral_distance > 75) {
       integral_distance = 75;
     }
+
     derivative_distance = (target_distance - prev_error_distance) * kd_distance;
     pid_output_distance = proportional_distance + integral_distance + derivative_distance;
     proportional_heading = heading_error * kp_heading;
     integral_heading = (integral_heading + heading_error) * ki_heading;
+    
     if (heading_error == 0) {
       integral_heading = 0;
     } 
+    
     if (integral_heading > 75) {
       integral_heading = 75;
     }
+
     derivative_heading = (heading_error - prev_error_heading) * kd_heading;
     pid_output_heading = proportional_heading + integral_heading + derivative_heading;
     left_velocity = pid_output_distance + pid_output_heading;
-    right_velocity = (pid_output_distance + pid_output_heading) * -1;
+    right_velocity = pid_output_distance + (pid_output_heading * -1);
+    
     // Set the velocities to move towards the target
     leftdrive.setVelocity(left_velocity, percent);
     rightdrive.setVelocity(right_velocity, percent);
+    
     // Spin the motors
     leftdrive.spin(forward);
     rightdrive.spin(forward);
-    Brain.Screen.print("x_pos: %f", x_pos);
+    
+    Brain.Screen.print("error_x: %f", error_x);
     Brain.Screen.newLine();
-    Brain.Screen.print("y_pos: %f", y_pos);
+    Brain.Screen.print("error_y: %f", error_y);
+    Brain.Screen.newLine();
+    Brain.Screen.print("dist: %f", target_distance);
+    Brain.Screen.newLine();
+    Brain.Screen.print("head: %f", heading_error);
     Brain.Screen.newLine();
     Brain.Screen.setCursor(1, 1);
-    wait(5, msec);
+    wait(1, msec);
     Brain.Screen.clearScreen();  
   }
+
   leftdrive.stop();
   rightdrive.stop();
-
   isAutonomousRunning = false;
 }
+
 int main() {
   Brain.Screen.setCursor(1, 1);
   Brain.Screen.print("Calibrating");
@@ -260,7 +274,8 @@ int main() {
   }
   vex::thread positionUpdater(updatePosition);
   vex::thread drivercontroll(driver);
-  autonomous(0, 4, 0);
-  autonomous(0, -2, 0);
+  autonomous(-2, 4, 0);
+  Brain.playSound(siren);
+  autonomous(0, 2, 0);
   Brain.playSound(siren);
 }
