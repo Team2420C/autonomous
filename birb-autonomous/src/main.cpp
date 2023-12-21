@@ -58,10 +58,10 @@ const float pi = 3.14159265358979323846;
 const float wheel_circumference = 2.3622 * pi;
 // const float wheel_distance = 4.5;
 const float gear_ratio = 3;
-const float kp_distance = 15;
+const float kp_distance = 30;
 const float ki_distance = 0;
 const float kd_distance = 0;
-const float kp_heading = .6;
+const float kp_heading = .3;
 const float ki_heading = 0;
 const float kd_heading = 0;
 float proportional_distance;
@@ -169,7 +169,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     dist_moved = (change_leftwheel + change_rightwheel) / 2;
     theta = BrainInertial.heading(degrees) * (pi / 180);
     
-    if (theta > 180 || theta < -180) {
+    if (theta > pi || theta < (-1 * pi)) {
       theta = 0;
       robotReverse = true;
     }
@@ -189,9 +189,6 @@ void autonomous(float target_x, float target_y, float target_angle) {
     error_y = target_y - y_pos;
     target_distance = sqrt(error_x * error_x + error_y * error_y);
     target_angle_odom = atan2(error_y, error_x);
-    
-    // Calculate the difference between the target angle and the current heading
-    angle_difference = target_angle_odom - theta;
     
     if (target_angle_odom != target_angle) {
       angle_difference = target_angle_odom - theta;
@@ -238,17 +235,9 @@ void autonomous(float target_x, float target_y, float target_angle) {
     // Spin the motors
     leftdrive.spin(forward);
     rightdrive.spin(forward);
-    
-    Brain.Screen.print("error_x: %f", error_x);
-    Brain.Screen.newLine();
-    Brain.Screen.print("error_y: %f", error_y);
-    Brain.Screen.newLine();
-    Brain.Screen.print("dist: %f", target_distance);
-    Brain.Screen.newLine();
-    Brain.Screen.print("head: %f", heading_error);
-    Brain.Screen.newLine();
-    Brain.Screen.setCursor(1, 1);
-    wait(1, msec);
+    printf("x: %f", error_x);
+    printf("y: %f", error_y);
+    wait(100, msec);
     Brain.Screen.clearScreen();  
   }
 
@@ -274,8 +263,9 @@ int main() {
   }
   vex::thread positionUpdater(updatePosition);
   vex::thread drivercontroll(driver);
-  autonomous(-2, 4, 0);
+  autonomous(0, 4, 0);
   Brain.playSound(siren);
+  waitUntil(!isAutonomousRunning);
   autonomous(0, 2, 0);
   Brain.playSound(siren);
 }
