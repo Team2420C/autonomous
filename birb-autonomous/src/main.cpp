@@ -175,7 +175,8 @@ void autonomous(float target_x, float target_y, float target_angle) {
     change_leftwheel = leftwheeldist - prev_leftwheeldist;
     dist_moved = (change_leftwheel + change_rightwheel) / 2;
     theta = BrainInertial.heading(degrees) * (pi / 180);
-    if (theta > pi || theta < (-1 * pi)) {
+    
+    if (std::abs(pi) < theta) {
       theta = 0;
       robotReverse = true;
     }
