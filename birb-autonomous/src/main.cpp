@@ -151,13 +151,20 @@ void driver(){
       rightdrive.spin(forward);
       wait(1, msec);
     } 
+    if (!isAutonomousRunning) {
+      leftdrive.setVelocity(0, percent);
+      rightdrive.setVelocity(0, percent);
+    }
     wait(5, msec);
   }
 }
 
 void autonomous(float target_x, float target_y, float target_angle) {
   isAutonomousRunning = true;
-  while (fabs(x_pos - target_x) > 0.1 || fabs(y_pos - target_y) > 0.1 || Controller.AxisA.position() != 0 || Controller.AxisD.position() != 0) {
+  while (fabs(x_pos - target_x) > 0.1 && fabs(y_pos - target_y) > 0.1) {
+    if (Controller.AxisA.position() != 0 || Controller.AxisD.position() != 0) {
+      return;
+    }
     prev_error_distance = target_distance;
     prev_error_heading = heading_error;
     prev_leftwheeldist = leftwheeldist;
@@ -168,7 +175,6 @@ void autonomous(float target_x, float target_y, float target_angle) {
     change_leftwheel = leftwheeldist - prev_leftwheeldist;
     dist_moved = (change_leftwheel + change_rightwheel) / 2;
     theta = BrainInertial.heading(degrees) * (pi / 180);
-    
     if (theta > pi || theta < (-1 * pi)) {
       theta = 0;
       robotReverse = true;
@@ -190,7 +196,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     target_distance = sqrt(error_x * error_x + error_y * error_y);
     target_angle_odom = atan2(error_y, error_x);
     
-    if (target_angle_odom != target_angle) {
+    if ((target_angle_odom  * (180 / pi)) != target_angle) {
       angle_difference = target_angle_odom - theta;
       heading_error = angle_difference * (180 / pi);
     }
@@ -237,7 +243,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     rightdrive.spin(forward);
     printf("x: %f", error_x);
     printf("y: %f", error_y);
-    wait(100, msec);
+    wait(2, msec);
     Brain.Screen.clearScreen();  
   }
 
