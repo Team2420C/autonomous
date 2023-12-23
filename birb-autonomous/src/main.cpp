@@ -88,8 +88,6 @@ float error_y;
 float prev_error_distance;
 float prev_error_heading;
 float dist_moved;
-float change_in_x;
-float change_in_y;
 float angle_difference;
 float target_angle;
 float target_angle_odom;
@@ -102,30 +100,15 @@ void updatePosition() {
       prev_leftwheeldist = leftwheeldist;
       prev_rightwheeldist = rightwheeldist;
       leftwheeldist = (leftdriveMotorA.position(degrees) + leftdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;
-      rightwheeldist = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;      
+      rightwheeldist = (rightdriveMotorA.position(degrees) + rightdriveMotorB.position(degrees)) / 2 * (wheel_circumference / 360) / gear_ratio;
       change_rightwheel = rightwheeldist - prev_rightwheeldist;
       change_leftwheel = leftwheeldist - prev_leftwheeldist;
       dist_moved = (change_leftwheel + change_rightwheel) / 2;
       theta = BrainInertial.heading(degrees) * (pi / 180);
-      if (theta > 180) {
-        theta = 0;
-        robotReverse = true;
-      }
-      if (robotReverse == false) {
-        change_in_x = dist_moved * sin(theta);
-        change_in_y = dist_moved * cos(theta);
-      } 
-      else {
-        change_in_x = dist_moved * cos(theta);
-        change_in_y = dist_moved * sin(theta);
-      }
-      x_pos = x_pos + change_in_x;
-      y_pos = y_pos + change_in_y; 
-      Brain.Screen.print("x_pos: %f", x_pos);
-      Brain.Screen.newLine();
-      Brain.Screen.print("y_pos: %f", y_pos);
-      Brain.Screen.newLine();
-      Brain.Screen.setCursor(1, 1);
+      x_pos += dist_moved * sin(theta);
+      y_pos += dist_moved * cos(theta);
+      printf("x: %f", x_pos);
+      printf("y: %f", y_pos);
       // Adjust the wait time as needed
       wait(5, msec);
       Brain.Screen.clearScreen();   
@@ -175,23 +158,8 @@ void autonomous(float target_x, float target_y, float target_angle) {
     change_leftwheel = leftwheeldist - prev_leftwheeldist;
     dist_moved = (change_leftwheel + change_rightwheel) / 2;
     theta = BrainInertial.heading(degrees) * (pi / 180);
-    
-    if (std::abs(pi) < theta) {
-      theta = 0;
-      robotReverse = true;
-    }
-    
-    if (robotReverse == false) {
-      change_in_x = dist_moved * cos(theta);
-      change_in_y = dist_moved * sin(theta);
-    } 
-    else {
-      change_in_x = dist_moved * sin(theta);
-      change_in_y = dist_moved * cos(theta);
-    }
-
-    x_pos = x_pos + change_in_x;
-    y_pos = y_pos + change_in_y; 
+    x_pos += dist_moved * sin(theta);
+    y_pos += dist_moved * cos(theta);
     error_x = target_x - x_pos;
     error_y = target_y - y_pos;
     target_distance = sqrt(error_x * error_x + error_y * error_y);
@@ -207,7 +175,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     }
 
     proportional_distance = target_distance * kp_distance;
-    integral_distance = (integral_distance + target_distance) * ki_distance;
+    integral_distance = (integral_distance + target_distance);
     
     if (target_distance == 0) {
       integral_distance = 0;
@@ -218,9 +186,9 @@ void autonomous(float target_x, float target_y, float target_angle) {
     }
 
     derivative_distance = (target_distance - prev_error_distance) * kd_distance;
-    pid_output_distance = proportional_distance + integral_distance + derivative_distance;
+    pid_output_distance = proportional_distance + integral_distance * ki_distance + derivative_distance;
     proportional_heading = heading_error * kp_heading;
-    integral_heading = (integral_heading + heading_error) * ki_heading;
+    integral_heading = (integral_heading + heading_error);
     
     if (heading_error == 0) {
       integral_heading = 0;
@@ -231,7 +199,7 @@ void autonomous(float target_x, float target_y, float target_angle) {
     }
 
     derivative_heading = (heading_error - prev_error_heading) * kd_heading;
-    pid_output_heading = proportional_heading + integral_heading + derivative_heading;
+    pid_output_heading = proportional_heading + integral_heading * ki_heading + derivative_heading;
     left_velocity = pid_output_distance + pid_output_heading;
     right_velocity = pid_output_distance + (pid_output_heading * -1);
     
@@ -242,8 +210,8 @@ void autonomous(float target_x, float target_y, float target_angle) {
     // Spin the motors
     leftdrive.spin(forward);
     rightdrive.spin(forward);
-    printf("x: %f", error_x);
-    printf("y: %f", error_y);
+    printf("x: %f", x_pos);
+    printf("y: %f", y_pos);
     wait(2, msec);
     Brain.Screen.clearScreen();  
   }
