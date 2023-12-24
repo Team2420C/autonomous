@@ -46,6 +46,7 @@ motor_group rightdrive = motor_group(rightdriveMotorA, rightdriveMotorB);
 controller Controller = controller();
 
 // define variable for remote controller enable/disable
+
 bool RemoteControlCodeEnabled = true;
 
 #pragma endregion VEXcode Generated Robot Configuration
@@ -110,7 +111,7 @@ void updatePosition() {
       printf("x: %f", x_pos);
       printf("y: %f", y_pos);
       // Adjust the wait time as needed
-      wait(5, msec);
+      wait(2, msec);
       Brain.Screen.clearScreen();   
     } 
     else {
@@ -236,11 +237,15 @@ int main() {
   while (!Controller.ButtonEUp.pressing()) {
     wait(5, msec);
   }
+  ///////////////////////
+  // TEST JUST ODOMETRY
   vex::thread positionUpdater(updatePosition);
   vex::thread drivercontroll(driver);
-  autonomous(0, 4, 0);
-  Brain.playSound(siren);
-  waitUntil(!isAutonomousRunning);
-  autonomous(0, 2, 0);
-  Brain.playSound(siren);
+  ///////////////////////
+  // TEST PID
+  // autonomous(0, 4, 0);
+  // Brain.playSound(siren);
+  // waitUntil(!isAutonomousRunning);
+  // autonomous(0, 2, 0);
+  // Brain.playSound(siren);
 }
