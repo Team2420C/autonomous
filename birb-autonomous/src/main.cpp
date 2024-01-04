@@ -143,7 +143,34 @@ void driver(){
   }
 }
 
-void autonomous(float target_x, float target_y, float target_angle) {
+void gth(float target_heading) {
+  while (fabs(theta - target_heading) > 0.1) {
+    if (Controller.AxisA.position() != 0 || Controller.AxisD.position() != 0) {
+      return;
+    }
+    theta = BrainInertial.heading(degrees);
+    proportional_heading = heading_error * kp_heading;
+    integral_heading = (integral_heading + heading_error);
+    if (heading_error == 0) {
+      integral_heading = 0;
+    } 
+    if (integral_heading > 90) {
+      integral_heading = 90;
+    }
+    derivative_heading = (heading_error - prev_error_heading) * kd_heading;
+    pid_output_heading = proportional_heading + integral_heading * ki_heading + derivative_heading;
+    left_velocity = pid_output_heading;
+    right_velocity = (pid_output_heading);
+    // Set the velocities to move towards the target
+    leftdrive.setVelocity(left_velocity, percent);
+    rightdrive.setVelocity(right_velocity, percent);
+    // Spin the motors
+    leftdrive.spin(forward);
+    rightdrive.spin(forward);
+  }
+}
+
+void gtp(float target_x, float target_y, bool robotReverse) {
   isAutonomousRunning = true;
   while (fabs(x_pos - target_x) > 0.1 && fabs(y_pos - target_y) > 0.1) {
     if (Controller.AxisA.position() != 0 || Controller.AxisD.position() != 0) {
@@ -165,16 +192,10 @@ void autonomous(float target_x, float target_y, float target_angle) {
     error_y = target_y - y_pos;
     target_distance = sqrt(error_x * error_x + error_y * error_y);
     target_angle_odom = atan2(error_y, error_x);
-    
-    if ((target_angle_odom  * (180 / pi)) != target_angle) {
-      angle_difference = target_angle_odom - theta;
-      heading_error = angle_difference * (180 / pi);
+    if (robotReverse) {
+      target_distance = target_distance * -1;
+      target_angle_odom = target_angle_odom * -1;
     }
-    else {
-      angle_difference = (target_angle * (pi / 180)) - theta;
-      heading_error = angle_difference * (180 / pi);
-    }
-
     proportional_distance = target_distance * kp_distance;
     integral_distance = (integral_distance + target_distance);
     
@@ -243,9 +264,10 @@ int main() {
   vex::thread drivercontroll(driver);
   ///////////////////////
   // TEST PID
-  // autonomous(0, 4, 0);
+  // gtp(0, 4, false);
+  // gth(90);
   // Brain.playSound(siren);
   // waitUntil(!isAutonomousRunning);
-  // autonomous(0, 2, 0);
+  // gpt(0, 2, true);
   // Brain.playSound(siren);
 }
